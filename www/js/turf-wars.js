@@ -9,6 +9,44 @@ var app = new Framework7({
   ]
 });
 
+const modal = app.sheet.create({
+  content: `<div class="sheet-modal">
+              <div class="sheet-modal-inner">
+                <div class="list inline-labels">
+                  <ul>
+                    <li class="item-content item-input">
+                      <div class="item-inner">
+                        <div class="item-title item-label">Username</div>
+                        <div class="item-input-wrap">
+                          <input type="text" id="username">
+                          <span class="input-clear-button"></span>
+                        </div>
+                      </div>
+                    </li>
+                    <li class="item-content item-input">
+                      <div class="item-inner">
+                        <div class="item-title item-label">Clan</div>
+                        <div class="item-input-wrap input-dropdown-wrap">
+                          <select id="clanselect">
+                            <option value="0">NORTH</option>
+                            <option value="1">WEST</option>
+                            <option value="2">SOUTH</option>
+                          </select>
+                        </div>
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+                <div class="block">
+                  <div class="row">
+                    <a class="button button-fill col sheet-close">Cancel</a>
+                    <a class="button button-fill col" onclick="changeUser()">Submit</a>
+                  </div>
+                </div>
+              </div>
+            </div>`
+});
+
 function Marker(owner, position, clan, area) {
   this.owner = owner;
   this.position = position;
@@ -29,17 +67,15 @@ var westsideLongitude = -112.859390, // Greater than is east, less than is west
     WEST = 1,
     SOUTH = 2,
     clan = NORTH,
-    user = "user";
+    user = "user",
+    map,
+    markers = [],
+    googleMarkers = [];
 
 
 document.addEventListener("deviceready", init, false);
 // init();
 function init() {
-  let map,
-      markers = [],
-      googleMarkers = [];
-
-
   map = new google.maps.Map(document.getElementById('map'), { zoom: 12, center: { lat: initialLat, lng: initialLng }});
 
   $("#take-photo-button").click(function() {
@@ -54,31 +90,34 @@ function init() {
 
   function geoLocationSuccess(position) {
     console.log("GeoLocation Success");
-    let pos = { lat: position.coords.latitude, lng: position.coords.longitude },
-        markerIcon;
+    let pos = { lat: position.coords.latitude, lng: position.coords.longitude };
 
     if(pos.lng > westsideLongitude) {
       if(pos.lat > southsideLatitude)
-        if(clan === NORTH) 
+        if(clan === NORTH)
           liberate(clan, pos);
-        else
+        else {
           markers.push(new Marker(user, pos, clan, NORTH));
+          plotLastMarker();
+        }
       else
-        if(clan === SOUTH) 
+        if(clan === SOUTH)
           liberate(clan, pos);
-        else
+        else {
           markers.push(new Marker(user, pos, clan, SOUTH));
+          plotLastMarker();
+        }
     }
 
     else {
       if(clan === WEST) {
         liberate(clan, pos);
       }
-      else
+      else {
         markers.push(new Marker(user, pos, clan, WEST));
+        plotLastMarker();
+      }
     }
-
-    plotAllMarkers();
   }
 
   function geoLocationError(e) {
@@ -120,16 +159,60 @@ function init() {
       }
     };
   }
+}
 
-  function plotAllMarkers() {
-    // CLear all markers!
-    for(let i = 0; i < googleMarkers.length; ++i) {
-      googleMarkers[i].setMap(null);
+function changeUser() {
+  clan = parseInt($("#clanselect").val());
+  user = $("#username").val();
+  modal.close();
+  console.log("Username: " + user + " Clan: " + clan);
+  plotAllMarkers();
+}
+
+function changeUserPopup() {
+  modal.open();
+}
+
+function plotAllMarkers() {
+  // CLear all markers!
+  for(let i = 0; i < googleMarkers.length; ++i) {
+    googleMarkers[i].setMap(null);
+  }
+  googleMarkers = [];
+
+  // Place new markers!
+  for(let i = 0; i < markers.length; ++i) {
+    let url;
+
+    if(markers[i].clan !== clan) {
+      url = enemyIcon;
     }
-    googleMarkers = [];
+    else {
+      if(markers[i].owner === user) {
+        url = userIcon;
+      }
+      else {
+        url = allyIcon;
+      }
+    }
+    googleMarkers.push(new google.maps.Marker({position: markers[i].position, map: map, icon: { url: url }}));
+  }
+}
 
-    for(let i = 0; i < markers.length; ++i) {
-      googleMarkers.push(new google.maps.Marker({position: markers[i].position, map: map}));
+function plotLastMarker() {
+  let url,
+      lastIndex = markers.length-1;
+
+  if(markers[lastIndex].clan !== clan) {
+    url = enemyIcon;
+  }
+  else {
+    if(markers[lastIndex].owner === user) {
+      url = userIcon;
+    }
+    else {
+      url = allyIcon;
     }
   }
+  googleMarkers.push(new google.maps.Marker({position: markers[lastIndex].position, map: map, icon: { url: url }}));
 }
