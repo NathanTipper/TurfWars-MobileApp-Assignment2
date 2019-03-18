@@ -1,5 +1,5 @@
 #map {
-	height: 50%;
+	height: 100%;
 }
 
 .statusbar {
@@ -12,4 +12,24 @@
 }
 .right {
 	margin-right: 10px;
+}
+
+#starting-page {
+	max-width: 100%;
+	width: 100vw;
+	height: 100vh;
+}
+
+#starting-img {
+	object-fit: cover;
+	height: 100%;
+	width: 100%;
+}
+
+#splash-screen-preloader {
+	position: absolute;
+	height: 50px;
+	width: 50px;
+	bottom: 10%;
+	left: 45%;
 }

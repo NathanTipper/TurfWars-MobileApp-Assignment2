@@ -3,11 +3,19 @@ var app = new Framework7({
   name: 'Turf Wars',
   routes: [
     {
+      name: 'home',
       path: '/',
-      url: 'index.html'
+      url: './index.html'
+    },
+    {
+      name: 'main',
+      path: '/main/',
+      url: '/pages/main.html'
     }
   ]
 });
+
+var $$ = Dom7;
 
 const modal = app.sheet.create({
   content: `<div class="sheet-modal">
@@ -56,6 +64,8 @@ function Marker(owner, position, clan, area) {
 
 var mainView = app.views.create('.view-main');
 
+document.addEventListener("deviceready", init, false);
+
 var westsideLongitude = -112.859390, // Greater than is east, less than is west
     southsideLatitude = 49.698185, // Greater than is north, less than is south
     initialLat = 49.689762,
@@ -70,23 +80,45 @@ var westsideLongitude = -112.859390, // Greater than is east, less than is west
     user = "user",
     map,
     markers = [],
-    googleMarkers = [];
+    googleMarkers = [],
+    loadingTime = 3000;
 
+$$(document).on('page:init', '.page[data-name="main"]', function(e) {
+  map = new google.maps.Map(document.getElementById('map'), { zoom: 12, center: { lat: initialLat, lng: initialLng }});
+  console.log("In main!");
+});
 
-document.addEventListener("deviceready", init, false);
 // init();
 function init() {
-  map = new google.maps.Map(document.getElementById('map'), { zoom: 12, center: { lat: initialLat, lng: initialLng }});
-
-  $("#take-photo-button").click(function() {
-    takePicture();
-  });
-
+  setTimeout(function() {
+    console.log("Going to main!");
+  }, loadingTime);
   let geoLocationOptions = {
     enableHighAccuracy: true,
     timeout: 5000,
     maximumAge: 3000
   };
+
+  function takePicture() {
+    let cameraOptions = {
+      quality: 100,
+      sourceType: Camera.PictureSourceType.CAMERA,
+      encodingType: Camera.EncodingType.PNG,
+      cameraDirection: Camera.Direction.BACK
+    }
+
+    navigator.camera.getPicture(cameraSuccess, cameraError, cameraOptions);
+  }
+
+  function cameraSuccess(imageData) {
+    console.log("Camera Success!");
+    navigator.geolocation.getCurrentPosition(geoLocationSuccess, geoLocationError, geoLocationOptions);
+
+  }
+
+  function cameraError(e) {
+    console.error(e);
+  }
 
   function geoLocationSuccess(position) {
     console.log("GeoLocation Success");
@@ -121,28 +153,6 @@ function init() {
   }
 
   function geoLocationError(e) {
-    console.error(e);
-  }
-
-  function takePicture() {
-    let cameraOptions = {
-      quality: 100,
-      sourceType: Camera.PictureSourceType.CAMERA,
-      encodingType: Camera.EncodingType.PNG,
-      cameraDirection: Camera.Direction.BACK
-    }
-
-    navigator.camera.getPicture(cameraSuccess, cameraError, cameraOptions);
-  }
-
-
-  function cameraSuccess(imageData) {
-    console.log("Camera Success!");
-    navigator.geolocation.getCurrentPosition(geoLocationSuccess, geoLocationError, geoLocationOptions);
-
-  }
-
-  function cameraError(e) {
     console.error(e);
   }
 
